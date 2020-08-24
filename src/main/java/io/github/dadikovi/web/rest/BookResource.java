@@ -95,7 +95,7 @@ public class BookResource {
     }
 
     /**
-     * {@code GET  /book} : get all the books filtered by the provided attribute values.
+     * {@code GET  /books-filtered} : get all the books filtered by the provided attribute values.
      *
      * @param book the example which will be the param of the query by example query
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the filtered list of books in body.
@@ -108,7 +108,7 @@ public class BookResource {
         value = "The example which will be the param of the query-by-example query. "
         + "A book will be returned if and only if all of the field values equal with the field values of this parameter."
     ) @Valid Book book) {
-        log.debug("REST request to update Book : {}", book);
+        log.debug("REST request to get filtered Book : {}", book);
         return bookRepository.findAll(Example.of(book));
     }
 
