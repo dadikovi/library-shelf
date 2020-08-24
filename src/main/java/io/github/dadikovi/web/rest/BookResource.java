@@ -6,13 +6,18 @@ import io.github.dadikovi.web.rest.errors.BadRequestAlertException;
 
 import io.github.jhipster.web.util.HeaderUtil;
 import io.github.jhipster.web.util.ResponseUtil;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
+import io.swagger.annotations.ApiResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Example;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.Valid;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
@@ -47,7 +52,12 @@ public class BookResource {
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
     @PostMapping("/books")
-    public ResponseEntity<Book> createBook(@RequestBody Book book) throws URISyntaxException {
+    @ApiOperation("Create a new book.")
+    public ResponseEntity<Book> createBook(@ApiParam(
+        name = "book",
+        type = "Book",
+        value = "The book to be created."
+    ) @RequestBody Book book) throws URISyntaxException {
         log.debug("REST request to save Book : {}", book);
         if (book.getId() != null) {
             throw new BadRequestAlertException("A new book cannot already have an ID", ENTITY_NAME, "idexists");
@@ -68,7 +78,12 @@ public class BookResource {
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
     @PutMapping("/books")
-    public ResponseEntity<Book> updateBook(@RequestBody Book book) throws URISyntaxException {
+    @ApiOperation("Updates an existing book.")
+    public ResponseEntity<Book> updateBook(@ApiParam(
+        name = "book",
+        type = "Book",
+        value = "The id of this book will identify to book which should be updated. It will be updated to match the given attributes of this parameter."
+    ) @RequestBody Book book) throws URISyntaxException {
         log.debug("REST request to update Book : {}", book);
         if (book.getId() == null) {
             throw new BadRequestAlertException("Invalid id", ENTITY_NAME, "idnull");
@@ -80,11 +95,30 @@ public class BookResource {
     }
 
     /**
+     * {@code GET  /book} : get all the books filtered by the provided attribute values.
+     *
+     * @param book the example which will be the param of the query by example query
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the filtered list of books in body.
+     */
+    @GetMapping("/books-filtered")
+    @ApiOperation("Gets all books which are matching with the provided example.")
+    public List<Book> getAllBooksByExample(@ApiParam(
+        name = "book",
+        type = "Book",
+        value = "The example which will be the param of the query-by-example query. "
+        + "A book will be returned if and only if all of the field values equal with the field values of this parameter."
+    ) @Valid Book book) {
+        log.debug("REST request to update Book : {}", book);
+        return bookRepository.findAll(Example.of(book));
+    }
+
+    /**
      * {@code GET  /books} : get all the books.
      *
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of books in body.
      */
     @GetMapping("/books")
+    @ApiOperation("Gets all books.")
     public List<Book> getAllBooks() {
         log.debug("REST request to get all Books");
         return bookRepository.findAll();
@@ -97,7 +131,12 @@ public class BookResource {
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the book, or with status {@code 404 (Not Found)}.
      */
     @GetMapping("/books/{id}")
-    public ResponseEntity<Book> getBook(@PathVariable Long id) {
+    @ApiOperation("Gets a given book by its id.")
+    public ResponseEntity<Book> getBook(@ApiParam(
+        name = "id",
+        type = "Long",
+        value = "The ID of the required book."
+    ) @PathVariable Long id) {
         log.debug("REST request to get Book : {}", id);
         Optional<Book> book = bookRepository.findById(id);
         return ResponseUtil.wrapOrNotFound(book);
@@ -110,7 +149,12 @@ public class BookResource {
      * @return the {@link ResponseEntity} with status {@code 204 (NO_CONTENT)}.
      */
     @DeleteMapping("/books/{id}")
-    public ResponseEntity<Void> deleteBook(@PathVariable Long id) {
+    @ApiOperation("Deletes a given book by its id.")
+    public ResponseEntity<Void> deleteBook(@ApiParam(
+        name = "id",
+        type = "Long",
+        value = "The ID of the book to delete."
+    ) @PathVariable Long id) {
         log.debug("REST request to delete Book : {}", id);
         bookRepository.deleteById(id);
         return ResponseEntity.noContent().headers(HeaderUtil.createEntityDeletionAlert(applicationName, false, ENTITY_NAME, id.toString())).build();

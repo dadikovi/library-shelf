@@ -20,6 +20,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -48,6 +49,8 @@ public class BookResourceIT {
 
     private static final Long DEFAULT_COUNT = 1L;
     private static final Long UPDATED_COUNT = 2L;
+    public static final String WAR_AND_PEACE = "War and Peace";
+    public static final String LEO_TOLSTOY = "Leo Tolstoy";
 
     @Autowired
     private BookRepository bookRepository;
@@ -59,6 +62,26 @@ public class BookResourceIT {
     private MockMvc restBookMockMvc;
 
     private Book book;
+
+    private static Book hitchhikersGuideToTheGalaxy() {
+        return new Book()
+            .title("The Hitchhiker's Guide to the Galaxy")
+            .author("Douglas Adams")
+            .publisher("Megadodo Publications")
+            .publishYear(1978L)
+            .createdAt(Instant.now())
+            .count(2L);
+    }
+
+    private static Book warAndPeace() {
+        return new Book()
+            .title(WAR_AND_PEACE)
+            .author(LEO_TOLSTOY)
+            .publisher("The Russian Messenger")
+            .publishYear(1869L)
+            .createdAt(Instant.now())
+            .count(2L);
+    }
 
     /**
      * Create an entity for this test.
@@ -158,7 +181,50 @@ public class BookResourceIT {
             .andExpect(jsonPath("$.[*].createdAt").value(hasItem(DEFAULT_CREATED_AT.toString())))
             .andExpect(jsonPath("$.[*].count").value(hasItem(DEFAULT_COUNT.intValue())));
     }
-    
+
+    @Test
+    @Transactional
+    public void getOneBookByExample() throws Exception {
+        // Insert two books
+        bookRepository.saveAndFlush(warAndPeace());
+        bookRepository.saveAndFlush(hitchhikersGuideToTheGalaxy());
+
+        // Check if two books are returned
+        restBookMockMvc.perform(get("/api/books-filtered?title=" + WAR_AND_PEACE + "&author=" + LEO_TOLSTOY))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(jsonPath("$.[*].title").value(hasItem(WAR_AND_PEACE)))
+            .andExpect(jsonPath("$.[*].author").value(hasItem(LEO_TOLSTOY)))
+            .andExpect(jsonPath("$", hasSize(1)));
+    }
+
+    @Test
+    @Transactional
+    public void getAllBooksByExample() throws Exception {
+        // Insert two books
+        bookRepository.saveAndFlush(warAndPeace());
+        bookRepository.saveAndFlush(hitchhikersGuideToTheGalaxy());
+
+        // Check if two books are returned
+        restBookMockMvc.perform(get("/api/books-filtered?count=2"))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(jsonPath("$", hasSize(2)));
+    }
+
+    @Test
+    @Transactional
+    public void getAllBooksByNonExistingExample() throws Exception {
+        // Insert two books
+        bookRepository.saveAndFlush(warAndPeace());
+        bookRepository.saveAndFlush(hitchhikersGuideToTheGalaxy());
+
+        // Check if no books are returned
+        restBookMockMvc.perform(get("/api/books-filtered?title=NON_EXISTING_TITLE&author=" + DEFAULT_AUTHOR))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$", hasSize(0)));
+    }
+
     @Test
     @Transactional
     public void getBook() throws Exception {
