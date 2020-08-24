@@ -1,0 +1,8 @@
+entity Book {
+	title String,
+    author String,
+    publisher String,
+    publishYear Long,
+    createdAt Instant,
+    count Long
+}
