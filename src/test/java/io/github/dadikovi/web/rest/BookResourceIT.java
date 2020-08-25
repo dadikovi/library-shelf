@@ -1,14 +1,23 @@
 package io.github.dadikovi.web.rest;
 
 import io.github.dadikovi.LibraryShelfApp;
+import io.github.dadikovi.config.ShelfChangedSender;
 import io.github.dadikovi.domain.Book;
+import io.github.dadikovi.domain.ShelfChangedMessage;
+import io.github.dadikovi.domain.enumeration.ChangeType;
 import io.github.dadikovi.repository.BookRepository;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.springframework.amqp.core.AmqpTemplate;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.boot.test.mock.mockito.MockBeans;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
@@ -21,6 +30,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -60,6 +70,9 @@ public class BookResourceIT {
 
     @Autowired
     private MockMvc restBookMockMvc;
+
+    @MockBean(name = "template")
+    private AmqpTemplate template;
 
     private Book book;
 
@@ -141,6 +154,8 @@ public class BookResourceIT {
         assertThat(testBook.getPublishYear()).isEqualTo(DEFAULT_PUBLISH_YEAR);
         assertThat(testBook.getCreatedAt()).isEqualTo(DEFAULT_CREATED_AT);
         assertThat(testBook.getCount()).isEqualTo(DEFAULT_COUNT);
+
+        Mockito.verify(template).convertAndSend(eq("shelfChanged"), eq(new ShelfChangedMessage(ChangeType.CREATE, testBook)));
     }
 
     @Test
@@ -286,6 +301,8 @@ public class BookResourceIT {
         assertThat(testBook.getPublishYear()).isEqualTo(UPDATED_PUBLISH_YEAR);
         assertThat(testBook.getCreatedAt()).isEqualTo(UPDATED_CREATED_AT);
         assertThat(testBook.getCount()).isEqualTo(UPDATED_COUNT);
+
+        Mockito.verify(template).convertAndSend(eq("shelfChanged"), eq(new ShelfChangedMessage(ChangeType.UPDATE, testBook)));
     }
 
     @Test
@@ -320,5 +337,10 @@ public class BookResourceIT {
         // Validate the database contains one less item
         List<Book> bookList = bookRepository.findAll();
         assertThat(bookList).hasSize(databaseSizeBeforeDelete - 1);
+
+        Book deletedBook = new Book();
+        deletedBook.setId(book.getId());
+
+        Mockito.verify(template).convertAndSend(eq("shelfChanged"), eq(new ShelfChangedMessage(ChangeType.DELETE, deletedBook)));
     }
 }

@@ -11,10 +11,5 @@ This microservice manages the books in the library.
     ```
 
 2. Run docker compose
-
-    ```
-    docker-compose -f src/main/docker/app.yml up -d
-    ```
-   
-3. Access of application
-    - jhipster registry (eureka, configserver, springbootadmin, swagger UI): localhost:8761   (admin / admin)
+    
+    See `library-opts` repository for further details!

@@ -1,21 +1,27 @@
 package io.github.dadikovi.web.rest;
 
+import io.github.dadikovi.config.ShelfChangedSender;
 import io.github.dadikovi.domain.Book;
 import io.github.dadikovi.repository.BookRepository;
 import io.github.dadikovi.web.rest.errors.BadRequestAlertException;
-
 import io.github.jhipster.web.util.HeaderUtil;
 import io.github.jhipster.web.util.ResponseUtil;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
-import io.swagger.annotations.ApiResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Example;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import javax.validation.Valid;
 import java.net.URI;
@@ -40,8 +46,11 @@ public class BookResource {
 
     private final BookRepository bookRepository;
 
-    public BookResource(BookRepository bookRepository) {
+    private final ShelfChangedSender shelfChangedSender;
+
+    public BookResource( BookRepository bookRepository, ShelfChangedSender shelfChangedSender ) {
         this.bookRepository = bookRepository;
+        this.shelfChangedSender = shelfChangedSender;
     }
 
     /**
@@ -63,6 +72,7 @@ public class BookResource {
             throw new BadRequestAlertException("A new book cannot already have an ID", ENTITY_NAME, "idexists");
         }
         Book result = bookRepository.save(book);
+        shelfChangedSender.created(book);
         return ResponseEntity.created(new URI("/api/books/" + result.getId()))
             .headers(HeaderUtil.createEntityCreationAlert(applicationName, false, ENTITY_NAME, result.getId().toString()))
             .body(result);
@@ -89,6 +99,7 @@ public class BookResource {
             throw new BadRequestAlertException("Invalid id", ENTITY_NAME, "idnull");
         }
         Book result = bookRepository.save(book);
+        shelfChangedSender.updated(book);
         return ResponseEntity.ok()
             .headers(HeaderUtil.createEntityUpdateAlert(applicationName, false, ENTITY_NAME, book.getId().toString()))
             .body(result);
@@ -157,6 +168,9 @@ public class BookResource {
     ) @PathVariable Long id) {
         log.debug("REST request to delete Book : {}", id);
         bookRepository.deleteById(id);
+        Book deleted = new Book();
+        deleted.setId(id);
+        shelfChangedSender.deleted(deleted);
         return ResponseEntity.noContent().headers(HeaderUtil.createEntityDeletionAlert(applicationName, false, ENTITY_NAME, id.toString())).build();
     }
 }
