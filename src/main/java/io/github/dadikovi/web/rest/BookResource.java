@@ -62,6 +62,7 @@ public class BookResource {
      */
     @PostMapping("/books")
     @ApiOperation("Create a new book.")
+    @Transactional
     public ResponseEntity<Book> createBook(@ApiParam(
         name = "book",
         type = "Book",
@@ -89,6 +90,7 @@ public class BookResource {
      */
     @PutMapping("/books")
     @ApiOperation("Updates an existing book.")
+    @Transactional
     public ResponseEntity<Book> updateBook(@ApiParam(
         name = "book",
         type = "Book",
@@ -161,6 +163,7 @@ public class BookResource {
      */
     @DeleteMapping("/books/{id}")
     @ApiOperation("Deletes a given book by its id.")
+    @Transactional
     public ResponseEntity<Void> deleteBook(@ApiParam(
         name = "id",
         type = "Long",
