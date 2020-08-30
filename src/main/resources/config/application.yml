@@ -153,6 +153,10 @@ spring:
   output:
     ansi:
       console-available: true
+  rabbitmq:
+    host: rabbitmq
+    username: admin
+    password: admin
 
 server:
   servlet:
